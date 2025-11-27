@@ -13,8 +13,9 @@ The script expects the following columns (case-insensitive):
 
 - `title` – Event title.
 - `date` – Event date.
-- `start_time` – Start time for the event.
-- `end_time` – End time for the event.
+
+- `time` – Start and end time range for the event, formatted with a hyphen (e.g., `9:00 AM - 10:00 AM`).
+
 - `venue` – Location text for the event.
 
 Date and time fields can be Excel date/time cells or strings; they are combined into timezone-aware datetimes using the `--timezone` option (default: `UTC`).

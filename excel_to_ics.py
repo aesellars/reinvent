@@ -1,6 +1,6 @@
 import argparse
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import Any, Dict
 
@@ -10,7 +10,7 @@ from icalendar import Alarm, Calendar, Event
 from pytz import timezone
 
 
-REQUIRED_COLUMNS = {"title", "date", "start_time", "end_time", "venue"}
+REQUIRED_COLUMNS = {"title", "date", "time", "venue"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,6 +62,17 @@ def parse_datetime(value: Any, tz) -> datetime:
     return dt
 
 
+def parse_time_range(value: Any) -> tuple[time, time]:
+    parts = re.split(r"\s*-\s*", str(value), maxsplit=1)
+    if len(parts) != 2:
+        raise ValueError(
+            "Time column must contain a start and end time separated by a hyphen (e.g., '9:00 AM - 10:00 AM')."
+        )
+    start_time = date_parser.parse(parts[0]).time()
+    end_time = date_parser.parse(parts[1]).time()
+    return start_time, end_time
+
+
 def row_description(row: Dict[str, Any]) -> str:
     lines = ["Event details from spreadsheet:"]
     for key, value in row.items():
@@ -79,11 +90,10 @@ def build_event(row: Dict[str, Any], tz, alert_minutes: int) -> Calendar:
     venue = str(row.get("venue", "")).strip()
 
     start = parse_datetime(row["date"], tz)
-    start_time = parse_datetime(row["start_time"], tz)
-    end_time = parse_datetime(row["end_time"], tz)
+    start_time, end_time = parse_time_range(row["time"])
 
-    dtstart = start.replace(hour=start_time.hour, minute=start_time.minute, second=0, microsecond=0)
-    dtend = start.replace(hour=end_time.hour, minute=end_time.minute, second=0, microsecond=0)
+    dtstart = start.replace(hour=start_time.hour, minute=start_time.minute, second=start_time.second, microsecond=0)
+    dtend = start.replace(hour=end_time.hour, minute=end_time.minute, second=end_time.second, microsecond=0)
     if dtend <= dtstart:
         dtend = dtstart + timedelta(hours=1)
 
